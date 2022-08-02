@@ -8,13 +8,14 @@
 #include <string>
 #include <vector>
 
+#include "logger.h"
 #include "op_code.h"
 
 /**
  * Reads the current byte in the bytecode
  * and advances the ip pointer
  */
-#define READ_BYTE() *ip++
+#define READ_BYTE() (uint64_t)(*ip++)
 
 class EvaVM {
 public:
@@ -43,9 +44,13 @@ public:
    */
   void eval() {
     for (;;) {
-      switch (READ_BYTE()) {
+      auto opcode = READ_BYTE();
+
+      switch (opcode) {
       case OP_HALT:
         return;
+      default:
+        DIE << "Unknown opcode: " << std::hex << opcode;
       }
     }
   }
