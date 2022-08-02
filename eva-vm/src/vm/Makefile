@@ -4,7 +4,7 @@ CFLAGS=-std=c++17 -Wall -ggdb3
 O=../../../build
 OBJS= $(O)/eva_vm.o
 
-all: prepare eva_vm
+all: clean eva_vm
 
 eva_vm: $(OBJS)
 	@$(CC) $(CFLAGS) $(OBJS) -o $(O)/$@
