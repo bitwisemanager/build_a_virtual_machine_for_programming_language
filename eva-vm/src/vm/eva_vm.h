@@ -11,6 +11,7 @@
 
 #include "../bytecode/op_code.h"
 #include "../parser/eva_parser.h"
+#include "eva_compiler.h"
 #include "eva_value.h"
 #include "logger.h"
 
@@ -25,7 +26,7 @@ using syntax::EvaParser;
 /**
  * Gets a constant from the pool
  */
-#define GET_CONST() (constants[READ_BYTE()])
+#define GET_CONST() (co->constants[READ_BYTE()])
 
 /**
  * Binary operation
@@ -44,7 +45,9 @@ using syntax::EvaParser;
 
 class EvaVM {
 public:
-  EvaVM() : parser(std::make_unique<EvaParser>()) {}
+  EvaVM()
+      : parser(std::make_unique<EvaParser>()),
+        compiler(std::make_unique<EvaCompiler>()) {}
 
   /**
    * Pushes a value onto the stack
@@ -74,19 +77,13 @@ public:
     auto ast = parser->parse(program);
 
     // 2. Compile program to Eva bytecode
-    code = compiler->compile(ast);
-
-    // constants.push_back(ALLOC_STRING("Hello, "));
-    // constants.push_back(ALLOC_STRING("world!"));
-
-    // (+ "Hello, " "world!") -> "Hello, world!"
-    // code = {OP_CONST, 0, OP_CONST, 1, OP_ADD, OP_HALT};
-
-    // Set instruction pointer to the beginning:
-    ip = &code[0];
+    co = compiler->compile(ast);
 
     // Init the stack
     sp = &stack[0];
+
+    // Set instruction pointer to the beginning:
+    ip = &co->code[0];
 
     return eval();
   }
@@ -155,6 +152,11 @@ public:
   std::unique_ptr<EvaParser> parser;
 
   /**
+   * Compiler
+   */
+  std::unique_ptr<EvaCompiler> compiler;
+
+  /**
    * Instruction pointer (aka Program counter)
    */
   uint8_t *ip;
@@ -170,14 +172,9 @@ public:
   std::array<EvaValue, STACK_LIMIT> stack;
 
   /**
-   * Constant pool
+   * Code object
    */
-  std::vector<EvaValue> constants;
-
-  /**
-   * Bytecode
-   */
-  std::vector<uint8_t> code;
+  CodeObject *co;
 };
 
 #endif
