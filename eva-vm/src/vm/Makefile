@@ -13,7 +13,9 @@ run: all
 	@$(O)/eva_vm
 
 clean: prepare
+ifeq ($(wildcard $(O)/.*),)
 	@rm $(O)/*
+endif
 
 $(O)/%.o: %.cpp
 	@$(CC) $(CFLAGS) -c $< -o $@
