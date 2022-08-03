@@ -21,7 +21,7 @@
 
 \s+                 %empty
 
-\"[^\"]*"           STRING
+\"[^\"]*\"          STRING
 
 \d+                 NUMBER
 

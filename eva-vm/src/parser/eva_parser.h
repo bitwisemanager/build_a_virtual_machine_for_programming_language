@@ -446,7 +446,7 @@ std::array<LexRule, Tokenizer::LEX_RULES_COUNT> Tokenizer::lexRules_ = {{
   {std::regex(R"(^\/\/.*)"), &_lexRule3},
   {std::regex(R"(^\/\*[\s\S]*?\*\/)"), &_lexRule4},
   {std::regex(R"(^\s+)"), &_lexRule5},
-  {std::regex(R"(^"[^\"]*)"), &_lexRule6},
+  {std::regex(R"(^"[^\"]*")"), &_lexRule6},
   {std::regex(R"(^\d+)"), &_lexRule7},
   {std::regex(R"(^[\w\-+*=!<>/]+)"), &_lexRule8}
 }};
