@@ -15,6 +15,7 @@
  */
 enum class EvaValueType {
   NUMBER,
+  BOOLEAN,
   OBJECT,
 };
 
@@ -47,6 +48,7 @@ struct EvaValue {
   EvaValueType type;
   union {
     double number;
+    bool boolean;
     Object *object;
   };
 };
@@ -79,6 +81,9 @@ struct CodeObject : public Object {
 #define NUMBER(value)                                                          \
   ((EvaValue){.type = EvaValueType::NUMBER, .number = value})
 
+#define BOOLEAN(value)                                                         \
+  ((EvaValue){.type = EvaValueType::BOOLEAN, .boolean = value})
+
 #define ALLOC_STRING(value)                                                    \
   ((EvaValue){.type = EvaValueType::OBJECT,                                    \
               .object = (Object *)new StringObject(value)})
@@ -91,6 +96,7 @@ struct CodeObject : public Object {
 // Accessors
 
 #define AS_NUMBER(evaValue) ((double)(evaValue).number)
+#define AS_BOOLEAN(evaValue) ((bool)(evaValue).boolean)
 #define AS_OBJECT(evaValue) ((Object *)(evaValue).object)
 #define AS_CODE(evaValue) ((CodeObject *)(evaValue).object)
 
@@ -101,6 +107,7 @@ struct CodeObject : public Object {
 // Testers:
 
 #define IS_NUMBER(evaValue) (evaValue.type == EvaValueType::NUMBER)
+#define IS_BOOLEAN(evaValue) (evaValue.type == EvaValueType::BOOLEAN)
 #define IS_OBJECT(evaValue) (evaValue.type == EvaValueType::OBJECT)
 
 #define IS_OBJECT_TYPE(evaValue, objectType)                                   \
@@ -115,6 +122,9 @@ struct CodeObject : public Object {
 std::string evaValueToTypeString(const EvaValue &evaValue) {
   if (IS_NUMBER(evaValue))
     return "NUMBER";
+
+  if (IS_BOOLEAN(evaValue))
+    return "BOOLEAN";
 
   if (IS_STRING(evaValue))
     return "STRING";
@@ -134,6 +144,8 @@ std::string evaValueToConstantString(const EvaValue &evaValue) {
   std::stringstream ss;
   if (IS_NUMBER(evaValue)) {
     ss << AS_NUMBER(evaValue);
+  } else if (IS_BOOLEAN(evaValue)) {
+    ss << (evaValue.boolean == true ? "true" : "false");
   } else if (IS_STRING(evaValue)) {
     ss << '"' << AS_CPPSTRING(evaValue) << '"';
   } else if (IS_CODE(evaValue)) {

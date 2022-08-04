@@ -9,6 +9,7 @@
 #include "../parser/eva_parser.h"
 #include "eva_value.h"
 
+#include <string>
 #include <vector>
 
 #define ALLOC_CONST(tester, converter, allocator, value)                       \
@@ -80,9 +81,18 @@ public:
 
       /**
        * --------------------------------------------------
-       * Symbol
+       * Symbol (variables, operators)
        */
     case ExpType::SYMBOL:
+      /**
+       * Boolean
+       */
+      if (exp.string == "true" || exp.string == "false") {
+        emit(OP_CONST);
+        emit(booleanConstIdx(exp.string == "true" ? true : false));
+      } else {
+        // TODO: Variable
+      }
       break;
 
     /**
@@ -106,16 +116,26 @@ public:
           GEN_BINARY_OP(OP_ADD);
         }
 
-        if (op == "-") {
+        else if (op == "-") {
           GEN_BINARY_OP(OP_SUB);
         }
 
-        if (op == "*") {
+        else if (op == "*") {
           GEN_BINARY_OP(OP_MUL);
         }
 
-        if (op == "/") {
+        else if (op == "/") {
           GEN_BINARY_OP(OP_DIV);
+        }
+
+        // --------------------------------------------------
+        // Compare operations (> 5 10)
+
+        else if (compareOps_.count(op) != 0) {
+          gen(exp.list[1]);
+          gen(exp.list[2]);
+          emit(OP_COMPARE);
+          emit(compareOps_[op]);
         }
       }
       break;
@@ -137,6 +157,13 @@ private:
     ALLOC_CONST(IS_STRING, AS_CPPSTRING, ALLOC_STRING, value);
     return co->constants.size() - 1;
   }
+  /**
+   * Allocates a boolean constant
+   */
+  size_t booleanConstIdx(bool value) {
+    ALLOC_CONST(IS_BOOLEAN, AS_BOOLEAN, BOOLEAN, value);
+    return co->constants.size() - 1;
+  }
 
   /**
    * Emits data to the bytecode
@@ -152,6 +179,17 @@ private:
    * Compilling code object
    */
   CodeObject *co;
+
+  /**
+   * Compare ops map
+   */
+  static std::map<std::string, uint8_t> compareOps_;
 };
+
+/**
+ * Compare ops map
+ */
+std::map<std::string, uint8_t> EvaCompiler::compareOps_ = {
+    {"<", 0}, {">", 1}, {"==", 2}, {">=", 3}, {"<=", 4}, {"!=", 5}};
 
 #endif

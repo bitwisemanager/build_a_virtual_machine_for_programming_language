@@ -39,6 +39,35 @@ using syntax::EvaParser;
   } while (0)
 
 /**
+ * Generic values comparison
+ */
+#define COMPARE_VALUES(op, v1, v2)                                             \
+  do {                                                                         \
+    bool res;                                                                  \
+    switch (op) {                                                              \
+    case 0:                                                                    \
+      res = v1 < v2;                                                           \
+      break;                                                                   \
+    case 1:                                                                    \
+      res = v1 > v2;                                                           \
+      break;                                                                   \
+    case 2:                                                                    \
+      res = v1 == v2;                                                          \
+      break;                                                                   \
+    case 3:                                                                    \
+      res = v1 >= v2;                                                          \
+      break;                                                                   \
+    case 4:                                                                    \
+      res = v1 <= v2;                                                          \
+      break;                                                                   \
+    case 5:                                                                    \
+      res = v1 != v2;                                                          \
+      break;                                                                   \
+    }                                                                          \
+    push(BOOLEAN(res));                                                        \
+  } while (0)
+
+/**
  * Stack top (stack overflow after exceeding)
  */
 #define STACK_LIMIT 512
@@ -138,6 +167,24 @@ public:
       case OP_DIV:
         BINARY_OP(/);
         break;
+
+        // -----------------------
+        // Comparison
+      case OP_COMPARE: {
+        auto op = READ_BYTE();
+        auto op2 = pop();
+        auto op1 = pop();
+
+        if (IS_NUMBER(op1) && IS_NUMBER(op2)) {
+          auto v1 = AS_NUMBER(op1);
+          auto v2 = AS_NUMBER(op2);
+          COMPARE_VALUES(op, v1, v2);
+        } else if (IS_STRING(op1) && IS_STRING(op2)) {
+          auto s1 = AS_STRING(op1);
+          auto s2 = AS_STRING(op2);
+          COMPARE_VALUES(op, s1, s2);
+        }
+      } break;
 
       default:
         DIE << "Unknown opcode: " << std::hex << (uint64_t)opcode;
