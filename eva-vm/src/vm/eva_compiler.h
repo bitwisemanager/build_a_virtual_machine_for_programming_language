@@ -137,12 +137,61 @@ public:
           emit(OP_COMPARE);
           emit(compareOps_[op]);
         }
+
+        // --------------------------------------------------
+        // Branch instruction
+
+        /**
+         * (if <test> <consequent> <alternate>)
+         */
+        else if (op == "if") {
+          // Emit <test>
+          gen(exp.list[1]);
+
+          // Else branch. Init with 0 address, will be patched
+          emit(OP_JMP_IF_ELSE);
+
+          // NOTE: we use 2-bytes adresses
+          emit(0);
+          emit(0);
+
+          auto elseJmpAddr = getOffset() - 2;
+
+          // Emit <consequent>
+          gen(exp.list[2]);
+
+          emit(OP_JMP);
+
+          // 2-byte addrees
+          emit(0);
+          emit(0);
+
+          auto endAddr = getOffset() - 2;
+
+          // Patch the else branch address
+          auto elseBranchAddr = getOffset();
+          patchJumpAddress(elseJmpAddr, elseBranchAddr);
+
+          // Emit <alternate> if we have it
+          if (exp.list.size() == 4) {
+            gen(exp.list[3]);
+          }
+
+          // Patch the end
+          auto endBranchAddr = getOffset();
+          patchJumpAddress(endAddr, endBranchAddr);
+        }
       }
       break;
     }
   }
 
 private:
+  /**
+   * Returns current bytecode offset
+   */
+  size_t getOffset() { return co->code.size(); }
+
   /**
    * Allocates a numeric constant
    */
@@ -169,6 +218,21 @@ private:
    * Emits data to the bytecode
    */
   void emit(uint8_t code) { co->code.push_back(code); }
+
+  /**
+   * Write bytes at offset
+   */
+  void writeBytesAtOffset(size_t offset, uint8_t value) {
+    co->code[offset] = value;
+  }
+
+  /**
+   * Patches jump address
+   */
+  void patchJumpAddress(size_t offset, uint16_t value) {
+    writeBytesAtOffset(offset, (value >> 8) & 0xFF);
+    writeBytesAtOffset(offset + 1, value & 0xFF);
+  }
 
   /**
    * Bytecode

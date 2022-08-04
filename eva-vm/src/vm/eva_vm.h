@@ -24,6 +24,16 @@ using syntax::EvaParser;
 #define READ_BYTE() *ip++
 
 /**
+ * Reads a short word (2 bytes)
+ */
+#define READ_SHORT() (ip += 2, (ip[-2] << 8) | ip[-1])
+
+/**
+ * Converts bytecode index to a pointer
+ */
+#define TO_ADDRESS(index) (&co->code[index])
+
+/**
  * Gets a constant from the pool
  */
 #define GET_CONST() (co->constants[READ_BYTE()])
@@ -184,6 +194,24 @@ public:
           auto s2 = AS_STRING(op2);
           COMPARE_VALUES(op, s1, s2);
         }
+      } break;
+
+        // -----------------------
+        // Conditional jump
+      case OP_JMP_IF_ELSE: {
+        auto cond = AS_BOOLEAN(pop());
+
+        auto address = READ_SHORT();
+
+        if (!cond) {
+          ip = TO_ADDRESS(address);
+        }
+      } break;
+
+        // -----------------------
+        // Unconditional jump
+      case OP_JMP: {
+        ip = TO_ADDRESS(READ_SHORT());
       } break;
 
       default:
