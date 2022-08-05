@@ -12,10 +12,11 @@ int main(int argc, char const **argv) {
 
   auto result = vm.exec(R"(
 
-    (if (>= 5 10) 1 2)
+    (if (> 5 10) 1 2)
 
   )");
 
+  std::cout << '\n';
   log(result);
 
   std::cout << "All done!\n";

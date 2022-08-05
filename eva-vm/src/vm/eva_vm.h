@@ -124,6 +124,9 @@ public:
     // Set instruction pointer to the beginning:
     ip = &co->code[0];
 
+    // Debug disassembly
+    compiler->disassembleBytecode();
+
     return eval();
   }
 
