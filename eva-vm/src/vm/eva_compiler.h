@@ -9,6 +9,7 @@
 #include "../disassembler/eva_disassembler.h"
 #include "../parser/eva_parser.h"
 #include "eva_value.h"
+#include "global.h"
 
 #include <string>
 #include <vector>
@@ -39,7 +40,9 @@
  */
 class EvaCompiler {
 public:
-  EvaCompiler() : disassembler(std::make_unique<EvaDisassembler>()) {}
+  EvaCompiler(std::shared_ptr<Global> global)
+      : disassembler(std::make_unique<EvaDisassembler>(global)),
+        global(global) {}
 
   /**
    * Main compile API
@@ -92,7 +95,15 @@ public:
         emit(OP_CONST);
         emit(booleanConstIdx(exp.string == "true" ? true : false));
       } else {
-        // TODO: Variable
+        // Variables:
+
+        // 1. Global vars:
+        if (!global->exists(exp.string)) {
+          DIE << "[EvaCompiler]: Reference error: " << exp.string;
+        }
+
+        emit(OP_GET_GLOBAL);
+        emit(global->getGlobalIndex(exp.string));
       }
       break;
 
@@ -182,6 +193,47 @@ public:
           auto endBranchAddr = getOffset();
           patchJumpAddress(endAddr, endBranchAddr);
         }
+
+        // ----------------------------------------------
+        // Variable declaration: (var x (+ y 10))
+
+        else if (op == "var") {
+
+          auto varName = exp.list[1].string;
+          // 1. Global vars:
+
+          global->define(varName);
+
+          // Initializer
+          gen(exp.list[2]);
+
+          emit(OP_SET_GLOBAL);
+          emit(global->getGlobalIndex(varName));
+
+          // 2. Local vars: (TODO)
+
+        }
+
+        // ----------------------------------------------
+        // Variable update: (set x 100)
+
+        else if (op == "set") {
+          // 1. Global vars:
+
+          auto varName = exp.list[1].string;
+
+          // Value:
+          gen(exp.list[2]);
+
+          auto globalIndex = global->getGlobalIndex(varName);
+          if (globalIndex == -1) {
+            DIE << "Reference error: " << varName << " is not defined.";
+          }
+          emit(OP_SET_GLOBAL);
+          emit(globalIndex);
+
+          // 2. Local vars: (TODO)
+        }
       }
       break;
     }
@@ -244,6 +296,11 @@ private:
     writeBytesAtOffset(offset, (value >> 8) & 0xFF);
     writeBytesAtOffset(offset + 1, value & 0xFF);
   }
+
+  /**
+   * Global object
+   */
+  std::shared_ptr<Global> global;
 
   /**
    * Bytecode

@@ -12,7 +12,15 @@ int main(int argc, char const **argv) {
 
   auto result = vm.exec(R"(
 
-    (if (> 5 10) 1 2)
+    (set x (+ x 10))
+
+    x
+
+    (begin
+        (var x 100)
+        x)
+
+    x
 
   )");
 
